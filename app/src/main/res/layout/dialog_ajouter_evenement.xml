@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Titre du dialogue -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📝 NOUVEL ÉVÉNEMENT"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#2196F3"
+            android:gravity="center"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Champ Titre -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Titre *"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_titre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: Soirée Cinéma"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/editbox_background"
+            android:maxLines="1"/>
+
+        <!-- Champ Description -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Description"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: Projection du nouveau film..."
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/editbox_background"
+            android:minLines="2"
+            android:maxLines="4"/>
+
+        <!-- Champ Date -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Date *"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="AAAA-MM-JJ (Ex: 2024-12-25)"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/editbox_background"
+            android:maxLines="1"/>
+
+        <!-- Champ Heure -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Heure"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_heure"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="HH:MM (Ex: 20:00)"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/editbox_background"
+            android:maxLines="1"/>
+
+        <!-- Champ Lieu -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lieu *"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_lieu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: Pathé, Parc, Salle des fêtes..."
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:background="@android:drawable/editbox_background"
+            android:maxLines="1"/>
+
+        <!-- Champ Nombre de places -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nombre de places *"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_places"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Ex: 50"
+            android:inputType="number"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"
+            android:background="@android:drawable/editbox_background"
+            android:maxLines="1"/>
+
+        <!-- Message d'information -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="* Champs obligatoires"
+            android:textSize="12sp"
+            android:textColor="#FF5722"
+            android:gravity="center"
+            android:layout_marginTop="8dp"/>
+
+    </LinearLayout>
+
+</ScrollView>
