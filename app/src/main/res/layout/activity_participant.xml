@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F5F5F5">
+
+    <!-- Barre de recherche -->
+    <EditText
+        android:id="@+id/et_recherche"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="🔍 Rechercher par titre ou lieu..."
+        android:padding="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@android:drawable/editbox_background"
+        android:maxLines="1"/>
+
+    <!-- Bouton Mes Inscriptions -->
+    <Button
+        android:id="@+id/btn_mes_inscriptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📋 MES INSCRIPTIONS"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#4CAF50"/>
+
+    <!-- Liste des événements -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView_evenements"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"/>
+
+</LinearLayout>

@@ -32,54 +32,65 @@ public class CreateurActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_createur);
 
-        // Initialiser la base de données
         db = new DatabaseHelper(this);
-
-        // Récupérer les références des vues
         recyclerView = findViewById(R.id.recyclerView_evenements);
         btnAjouter = findViewById(R.id.btn_ajouter);
-
-        // Configurer le RecyclerView
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Charger la liste des événements
         chargerListeEvenements();
 
-        // Gestion du clic sur le bouton Ajouter
-        btnAjouter.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                afficherDialogAjoutEvenement();
-            }
-        });
+        btnAjouter.setOnClickListener(v -> afficherDialogAjoutEvenement());
     }
 
-    // Méthode pour charger la liste des événements
     private void chargerListeEvenements() {
         listeEvenements = db.getAllEvenements();
-        adapter = new EvenementAdapter(this, listeEvenements, new EvenementAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(Evenement evenement) {
-                // Afficher les détails de l'événement (à faire plus tard)
-                Toast.makeText(CreateurActivity.this,
-                        "Vous avez cliqué sur: " + evenement.getTitre(),
-                        Toast.LENGTH_SHORT).show();
-            }
+        adapter = new EvenementAdapter(this, listeEvenements, evenement -> {
+            // Clic long : menu d'options
+            afficherMenuOptions(evenement);
         });
         recyclerView.setAdapter(adapter);
     }
 
-    // Afficher le dialogue pour ajouter un événement
+    private void afficherMenuOptions(Evenement evenement) {
+        String[] options = {"Voir les inscrits", "Modifier", "Supprimer"};
+        new AlertDialog.Builder(this)
+                .setTitle(evenement.getTitre())
+                .setItems(options, (dialog, which) -> {
+                    if (which == 0) {
+                        // Voir les inscrits
+                        Intent intent = new Intent(this, ListeInscritsActivity.class);
+                        intent.putExtra("evenement_id", evenement.getId());
+                        intent.putExtra("evenement_titre", evenement.getTitre());
+                        startActivity(intent);
+                    } else if (which == 1) {
+                        afficherDialogModifierEvenement(evenement);
+                    } else {
+                        confirmerSuppression(evenement);
+                    }
+                })
+                .show();
+    }
+
+    private void confirmerSuppression(Evenement evenement) {
+        new AlertDialog.Builder(this)
+                .setTitle("Supprimer")
+                .setMessage("Supprimer \"" + evenement.getTitre() + "\" ?")
+                .setPositiveButton("Supprimer", (dialog, which) -> {
+                    db.supprimerEvenement(evenement.getId());
+                    Toast.makeText(this, "Événement supprimé", Toast.LENGTH_SHORT).show();
+                    chargerListeEvenements();
+                })
+                .setNegativeButton("Annuler", null)
+                .show();
+    }
+
     private void afficherDialogAjoutEvenement() {
-        // Créer un dialogue personnalisé
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Ajouter un événement");
 
-        // Charger le layout du formulaire
         View view = getLayoutInflater().inflate(R.layout.dialog_ajouter_evenement, null);
         builder.setView(view);
 
-        // Récupérer les champs du formulaire
         EditText etTitre = view.findViewById(R.id.et_titre);
         EditText etDescription = view.findViewById(R.id.et_description);
         EditText etDate = view.findViewById(R.id.et_date);
@@ -87,61 +98,95 @@ public class CreateurActivity extends AppCompatActivity {
         EditText etLieu = view.findViewById(R.id.et_lieu);
         EditText etPlaces = view.findViewById(R.id.et_places);
 
-        // Boutons
-        builder.setPositiveButton("Enregistrer", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                // Récupérer les valeurs saisies
-                String titre = etTitre.getText().toString().trim();
-                String description = etDescription.getText().toString().trim();
-                String date = etDate.getText().toString().trim();
-                String heure = etHeure.getText().toString().trim();
-                String lieu = etLieu.getText().toString().trim();
-                String placesStr = etPlaces.getText().toString().trim();
+        builder.setPositiveButton("Enregistrer", (dialog, which) -> {
+            String titre = etTitre.getText().toString().trim();
+            String description = etDescription.getText().toString().trim();
+            String date = etDate.getText().toString().trim();
+            String heure = etHeure.getText().toString().trim();
+            String lieu = etLieu.getText().toString().trim();
+            String placesStr = etPlaces.getText().toString().trim();
 
-                // Vérifier que les champs obligatoires sont remplis
-                if (titre.isEmpty() || date.isEmpty() || lieu.isEmpty() || placesStr.isEmpty()) {
-                    Toast.makeText(CreateurActivity.this,
-                            "Veuillez remplir tous les champs obligatoires !",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
+            if (titre.isEmpty() || date.isEmpty() || lieu.isEmpty() || placesStr.isEmpty()) {
+                Toast.makeText(this, "Veuillez remplir tous les champs obligatoires !", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                int placesMax = Integer.parseInt(placesStr);
-                int placesRestantes = placesMax;
+            int placesMax = Integer.parseInt(placesStr);
+            Evenement evenement = new Evenement(titre, description, date, heure, lieu, placesMax, placesMax);
+            long id = db.ajouterEvenement(evenement);
 
-                // Créer l'objet Evenement
-                Evenement evenement = new Evenement(
-                        titre, description, date, heure, lieu, placesMax, placesRestantes
-                );
-
-                // Ajouter à la base de données
-                long id = db.ajouterEvenement(evenement);
-
-                if (id != -1) {
-                    Toast.makeText(CreateurActivity.this,
-                            "Événement ajouté avec succès !",
-                            Toast.LENGTH_SHORT).show();
-                    // Recharger la liste
-                    chargerListeEvenements();
-                } else {
-                    Toast.makeText(CreateurActivity.this,
-                            "Erreur lors de l'ajout !",
-                            Toast.LENGTH_SHORT).show();
-                }
+            if (id != -1) {
+                Toast.makeText(this, "Événement ajouté !", Toast.LENGTH_SHORT).show();
+                chargerListeEvenements();
+            } else {
+                Toast.makeText(this, "Erreur lors de l'ajout !", Toast.LENGTH_SHORT).show();
             }
         });
 
         builder.setNegativeButton("Annuler", null);
+        builder.show();
+    }
 
-        // Afficher le dialogue
+    private void afficherDialogModifierEvenement(Evenement evenement) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Modifier l'événement");
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_ajouter_evenement, null);
+        builder.setView(view);
+
+        EditText etTitre = view.findViewById(R.id.et_titre);
+        EditText etDescription = view.findViewById(R.id.et_description);
+        EditText etDate = view.findViewById(R.id.et_date);
+        EditText etHeure = view.findViewById(R.id.et_heure);
+        EditText etLieu = view.findViewById(R.id.et_lieu);
+        EditText etPlaces = view.findViewById(R.id.et_places);
+
+        // Pré-remplir les champs
+        etTitre.setText(evenement.getTitre());
+        etDescription.setText(evenement.getDescription());
+        etDate.setText(evenement.getDate());
+        etHeure.setText(evenement.getHeure());
+        etLieu.setText(evenement.getLieu());
+        etPlaces.setText(String.valueOf(evenement.getPlacesMax()));
+
+        builder.setPositiveButton("Enregistrer", (dialog, which) -> {
+            String titre = etTitre.getText().toString().trim();
+            String description = etDescription.getText().toString().trim();
+            String date = etDate.getText().toString().trim();
+            String heure = etHeure.getText().toString().trim();
+            String lieu = etLieu.getText().toString().trim();
+            String placesStr = etPlaces.getText().toString().trim();
+
+            if (titre.isEmpty() || date.isEmpty() || lieu.isEmpty() || placesStr.isEmpty()) {
+                Toast.makeText(this, "Veuillez remplir tous les champs obligatoires !", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            int placesMax = Integer.parseInt(placesStr);
+            // Recalculer places restantes
+            int inscrites = evenement.getPlacesMax() - evenement.getPlacesRestantes();
+            int placesRestantes = Math.max(0, placesMax - inscrites);
+
+            evenement.setTitre(titre);
+            evenement.setDescription(description);
+            evenement.setDate(date);
+            evenement.setHeure(heure);
+            evenement.setLieu(lieu);
+            evenement.setPlacesMax(placesMax);
+            evenement.setPlacesRestantes(placesRestantes);
+
+            db.modifierEvenement(evenement);
+            Toast.makeText(this, "Événement modifié !", Toast.LENGTH_SHORT).show();
+            chargerListeEvenements();
+        });
+
+        builder.setNegativeButton("Annuler", null);
         builder.show();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Recharger la liste quand on revient sur cette activité
         chargerListeEvenements();
     }
 }

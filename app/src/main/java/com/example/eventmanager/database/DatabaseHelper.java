@@ -71,11 +71,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    // Ajouter un événement
+    // ─── ÉVÉNEMENTS ───────────────────────────────────────────────────────────
+
     public long ajouterEvenement(Evenement evenement) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
         values.put(COL_TITRE, evenement.getTitre());
         values.put(COL_DESCRIPTION, evenement.getDescription());
         values.put(COL_DATE, evenement.getDate());
@@ -83,31 +83,42 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_LIEU, evenement.getLieu());
         values.put(COL_PLACES_MAX, evenement.getPlacesMax());
         values.put(COL_PLACES_RESTANTES, evenement.getPlacesRestantes());
-
         long id = db.insert(TABLE_EVENEMENT, null, values);
         db.close();
         return id;
     }
 
-    // Récupérer tous les événements
+    public int modifierEvenement(Evenement evenement) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_TITRE, evenement.getTitre());
+        values.put(COL_DESCRIPTION, evenement.getDescription());
+        values.put(COL_DATE, evenement.getDate());
+        values.put(COL_HEURE, evenement.getHeure());
+        values.put(COL_LIEU, evenement.getLieu());
+        values.put(COL_PLACES_MAX, evenement.getPlacesMax());
+        values.put(COL_PLACES_RESTANTES, evenement.getPlacesRestantes());
+        int rows = db.update(TABLE_EVENEMENT, values, COL_ID + " = ?",
+                new String[]{String.valueOf(evenement.getId())});
+        db.close();
+        return rows;
+    }
+
+    public void supprimerEvenement(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        // Supprimer d'abord les inscriptions liées
+        db.delete(TABLE_INSCRIPTION, COL_EVENEMENT_ID + " = ?", new String[]{String.valueOf(id)});
+        db.delete(TABLE_EVENEMENT, COL_ID + " = ?", new String[]{String.valueOf(id)});
+        db.close();
+    }
+
     public List<Evenement> getAllEvenements() {
         List<Evenement> evenements = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor = db.query(TABLE_EVENEMENT, null, null, null, null, null, COL_DATE + " ASC");
-
         if (cursor.moveToFirst()) {
             do {
-                Evenement evenement = new Evenement();
-                evenement.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)));
-                evenement.setTitre(cursor.getString(cursor.getColumnIndexOrThrow(COL_TITRE)));
-                evenement.setDescription(cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)));
-                evenement.setDate(cursor.getString(cursor.getColumnIndexOrThrow(COL_DATE)));
-                evenement.setHeure(cursor.getString(cursor.getColumnIndexOrThrow(COL_HEURE)));
-                evenement.setLieu(cursor.getString(cursor.getColumnIndexOrThrow(COL_LIEU)));
-                evenement.setPlacesMax(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_MAX)));
-                evenement.setPlacesRestantes(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_RESTANTES)));
-                evenements.add(evenement);
+                evenements.add(cursorToEvenement(cursor));
             } while (cursor.moveToNext());
         }
         cursor.close();
@@ -115,26 +126,110 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return evenements;
     }
 
-    // Récupérer un événement par son ID
     public Evenement getEvenementById(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.query(TABLE_EVENEMENT, null, COL_ID + " = ?",
                 new String[]{String.valueOf(id)}, null, null, null);
-
         Evenement evenement = null;
         if (cursor.moveToFirst()) {
-            evenement = new Evenement();
-            evenement.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)));
-            evenement.setTitre(cursor.getString(cursor.getColumnIndexOrThrow(COL_TITRE)));
-            evenement.setDescription(cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)));
-            evenement.setDate(cursor.getString(cursor.getColumnIndexOrThrow(COL_DATE)));
-            evenement.setHeure(cursor.getString(cursor.getColumnIndexOrThrow(COL_HEURE)));
-            evenement.setLieu(cursor.getString(cursor.getColumnIndexOrThrow(COL_LIEU)));
-            evenement.setPlacesMax(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_MAX)));
-            evenement.setPlacesRestantes(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_RESTANTES)));
+            evenement = cursorToEvenement(cursor);
         }
         cursor.close();
         db.close();
         return evenement;
+    }
+
+    private Evenement cursorToEvenement(Cursor cursor) {
+        Evenement e = new Evenement();
+        e.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)));
+        e.setTitre(cursor.getString(cursor.getColumnIndexOrThrow(COL_TITRE)));
+        e.setDescription(cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)));
+        e.setDate(cursor.getString(cursor.getColumnIndexOrThrow(COL_DATE)));
+        e.setHeure(cursor.getString(cursor.getColumnIndexOrThrow(COL_HEURE)));
+        e.setLieu(cursor.getString(cursor.getColumnIndexOrThrow(COL_LIEU)));
+        e.setPlacesMax(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_MAX)));
+        e.setPlacesRestantes(cursor.getInt(cursor.getColumnIndexOrThrow(COL_PLACES_RESTANTES)));
+        return e;
+    }
+
+    // ─── INSCRIPTIONS ─────────────────────────────────────────────────────────
+
+    public long ajouterInscription(Inscription inscription) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COL_EVENEMENT_ID, inscription.getEvenementId());
+        values.put(COL_PARTICIPANT_NOM, inscription.getParticipantNom());
+        values.put(COL_PARTICIPANT_EMAIL, inscription.getParticipantEmail());
+        values.put(COL_DATE_INSCRIPTION, inscription.getDateInscription());
+        long id = db.insert(TABLE_INSCRIPTION, null, values);
+
+        // Décrémenter les places restantes
+        if (id != -1) {
+            db.execSQL("UPDATE " + TABLE_EVENEMENT + " SET " + COL_PLACES_RESTANTES
+                    + " = " + COL_PLACES_RESTANTES + " - 1 WHERE " + COL_ID
+                    + " = " + inscription.getEvenementId());
+        }
+        db.close();
+        return id;
+    }
+
+    public List<Inscription> getInscriptionsByEvenement(int evenementId) {
+        List<Inscription> inscriptions = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_INSCRIPTION, null, COL_EVENEMENT_ID + " = ?",
+                new String[]{String.valueOf(evenementId)}, null, null, COL_DATE_INSCRIPTION + " DESC");
+        if (cursor.moveToFirst()) {
+            do {
+                inscriptions.add(cursorToInscription(cursor));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return inscriptions;
+    }
+
+    public List<Inscription> getInscriptionsByEmail(String email) {
+        List<Inscription> inscriptions = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_INSCRIPTION, null, COL_PARTICIPANT_EMAIL + " = ?",
+                new String[]{email}, null, null, COL_DATE_INSCRIPTION + " DESC");
+        if (cursor.moveToFirst()) {
+            do {
+                inscriptions.add(cursorToInscription(cursor));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        db.close();
+        return inscriptions;
+    }
+
+    public boolean isDejaInscrit(int evenementId, String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_INSCRIPTION, new String[]{COL_ID},
+                COL_EVENEMENT_ID + " = ? AND " + COL_PARTICIPANT_EMAIL + " = ?",
+                new String[]{String.valueOf(evenementId), email}, null, null, null);
+        boolean existe = cursor.getCount() > 0;
+        cursor.close();
+        db.close();
+        return existe;
+    }
+
+    public void desinscrire(int inscriptionId, int evenementId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_INSCRIPTION, COL_ID + " = ?", new String[]{String.valueOf(inscriptionId)});
+        // Incrémenter les places restantes
+        db.execSQL("UPDATE " + TABLE_EVENEMENT + " SET " + COL_PLACES_RESTANTES
+                + " = " + COL_PLACES_RESTANTES + " + 1 WHERE " + COL_ID + " = " + evenementId);
+        db.close();
+    }
+
+    private Inscription cursorToInscription(Cursor cursor) {
+        Inscription i = new Inscription();
+        i.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_ID)));
+        i.setEvenementId(cursor.getInt(cursor.getColumnIndexOrThrow(COL_EVENEMENT_ID)));
+        i.setParticipantNom(cursor.getString(cursor.getColumnIndexOrThrow(COL_PARTICIPANT_NOM)));
+        i.setParticipantEmail(cursor.getString(cursor.getColumnIndexOrThrow(COL_PARTICIPANT_EMAIL)));
+        i.setDateInscription(cursor.getString(cursor.getColumnIndexOrThrow(COL_DATE_INSCRIPTION)));
+        return i;
     }
 }
